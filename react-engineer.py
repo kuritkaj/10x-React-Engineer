@@ -144,7 +144,8 @@ def get_dependency_prompt(codebase):
   return DependenciesPrompt + "Using the codebase below determine whether this project is missing npm packages \n "+codebase+"  [/INST]"
 
 def get_modification_prompt(code_block, modification_ask):
-  return ModificationPrompt + "CODE:"+code_block+"\nMODIFICATION: "+modification_ask+"  [/INST]"
+  return (f"{ModificationPrompt}CODE:{code_block}" + "\nMODIFICATION: " +
+          modification_ask + "  [/INST]")
 
 # this function generates text using the Llama 2 model based on the given prompt
 # returns the generated text
@@ -176,18 +177,13 @@ def parse_scaffolding_result(output):
   file_names = re.findall(r"\*\*(.*?)\*\*", output, re.DOTALL)
   print(file_names)
   print(code_blocks)
-  code_files = []
   print("files length", len(file_names))
   print("codes length", len(code_blocks))
 
-  for i in range(0, len(file_names)):
-    if i < len(code_blocks):
-      code_files.append({
-          "file_name": file_names[i],
-          "code_block": code_blocks[i]
-      })
-
-  return code_files
+  return [{
+      "file_name": file_names[i],
+      "code_block": code_blocks[i]
+  } for i in range(0, len(file_names)) if i < len(code_blocks)]
 
 # this function takes a list of code files and a modification prompt and generates a new code block for each file using the prompt
 # returns a list of dictionaries containing the file name and code block for each file
@@ -216,8 +212,7 @@ def resolve_missing_dependencies(code_files):
   dep_result = dep_result[dep_result.index("[/INST]"):]
   print(dep_result)
   if "PACKAGEJSON" in dep_result:
-    package_json_text = re.findall(r"```(.*?)```", dep_result, re.DOTALL)[0]
-    return package_json_text
+    return re.findall(r"```(.*?)```", dep_result, re.DOTALL)[0]
   else:
     return None
 
@@ -227,10 +222,7 @@ def dev_loop(code_files, user_ask, modification_ask=None):
     # update each related code block with a prediction using the modification ask of the user
     code_files = initiate_code_modification(code_files, modification_ask)
 
-  # dependency resolving
-  new_package_json = resolve_missing_dependencies(code_files)
-  # set new package.json if it exists
-  if new_package_json:
+  if new_package_json := resolve_missing_dependencies(code_files):
     for code_file in code_files:
       if 'package.json' in code_file["file_name"]:
         code_file["code_block"] = new_package_json

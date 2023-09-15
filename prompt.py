@@ -97,7 +97,10 @@ class Prompt:
   def get_code_writer_prompt(self, product_summary, name=None, branding=None):
     additional_info = ('', '')
     if name and branding:
-      additional_info = ('The user will provide a name and branding colors for you to use. You must utilize both of these in the react code. \nThe user will provide the name and branding in the format below:\nNAME: the project name\nBRANDING: the primary/secondary colors\n ', "NAME: "+name + "\nBRANDING: " + branding + "\n")
+      additional_info = (
+          'The user will provide a name and branding colors for you to use. You must utilize both of these in the react code. \nThe user will provide the name and branding in the format below:\nNAME: the project name\nBRANDING: the primary/secondary colors\n ',
+          f"NAME: {name}" + "\nBRANDING: " + branding + "\n",
+      )
 
     return (self.CodeWriterPrompt + "\nInstructions for the code: I want the entrypoint file for a "+product_summary+" built in react.js %s [/INST]") % additional_info
 
@@ -108,4 +111,5 @@ class Prompt:
     return self.DependenciesPrompt + "Using the codebase below determine whether this project is missing npm packages \n "+codebase+"  [/INST]"
 
   def get_modification_prompt(self, code_block, modification_ask):
-    return self.ModificationPrompt + "CODE:"+code_block+"\nMODIFICATION: "+modification_ask+"  [/INST]"
+    return (f"{self.ModificationPrompt}CODE:{code_block}" + "\nMODIFICATION: " +
+            modification_ask + "  [/INST]")
